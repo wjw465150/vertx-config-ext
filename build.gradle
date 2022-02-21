@@ -1,0 +1,147 @@
+//打包: gradlew -x test clean build 成功后发布:gradlew -x test publish
+//然后登录https://oss.sonatype.org/#stagingRepositories来查看,你的提交在未处理前，是`open`状态，然后点击`Close`按钮;然后等一会点击`Release`来发布
+
+plugins {
+  id 'java'
+  id 'maven-publish'
+  id 'signing' //使用signing plugin做数字签名
+}
+
+apply from: rootDir.canonicalPath + '/.gradle/publish.gradle'
+
+// jar包的名字
+archivesBaseName = 'vertx-config-ext'
+
+ext {
+  vertx = [version : '4.2.5']
+}
+
+group = 'com.github.wjw465150'  //Sonatype上的Issue里填写的`Group Id`,可以跟package路径完全不一样
+version = "4.2.5"
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+[compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
+
+compileJava {
+  options.encoding = 'UTF-8'
+  options.deprecation = true
+  options.compilerArgs += ["-parameters","-Xlint:deprecation"]
+  
+  doFirst {
+    println "options:"+options
+    println "options.compilerArgs:"+options.compilerArgs
+  }
+  
+}
+
+compileTestJava {
+  options.encoding = 'UTF-8'
+  options.deprecation = true
+  options.compilerArgs += ["-parameters","-Xlint:deprecation"]
+          
+  doFirst {
+    println "options:"+options
+    println "options.compilerArgs:"+options.compilerArgs
+  }
+  
+}
+
+jar {
+  manifest {
+    attributes 'Built-By': 'wjw465150@gmail.com',
+    'Build-Name': "${project.name}",
+    'Build-Version': "${project.version}",
+    'Build-URL': 'https://github.com/wjw465150/vertx-config-ext'
+  }
+  excludes = ['**/test/**']
+}
+
+java {
+  withJavadocJar()
+  withSourcesJar()
+}
+
+publishing {
+  // 定义发布什么
+  publications {
+    mavenJava(MavenPublication) {
+      // groupId,artifactId,version，如果不定义，则会按照默认值执行
+      groupId = project.group  //Sonatype上的Issue里填写的`Group Id`,可以跟package路径完全不一样
+      artifactId = project.name
+      version = project.version
+ 
+      from components.java
+      versionMapping {  //为了解决: Gradle, SpringBoot, MavenPublish - Publication only contains dependencies and/or constraints without a version
+        usage('java-api') {
+          fromResolutionOf('runtimeClasspath')
+        }
+        usage('java-runtime') {
+          fromResolutionResult()
+        }
+      }
+      
+      pom {
+        // 构件名称
+        // 区别于artifactId，可以理解为artifactName
+        name = project.name
+        // 构件描述
+        description = 'load vertx config file from classpath'
+        // 构件主页
+        url = 'https://github.com/wjw465150/vertx-config-ext'
+        // 许可证名称和地址
+        licenses {
+          license {
+            name = 'The Apache License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution = 'load vertx config file from classpath'
+          }
+        }
+        // 开发者信息
+        developers {
+          developer {
+            id = 'wjw465150'
+            name = 'wjw465150'
+            email = 'wjw465150@gmail.com'
+          }
+        }
+        // 版本控制仓库地址
+        scm {
+          url = "https://github.com/wjw465150/vertx-config-ext"
+          connection = "https://github.com/wjw465150/vertx-config-ext.git"
+          developerConnection = "https://github.com/wjw465150/vertx-config-ext.git"
+        }
+      }
+    }
+  }
+ 
+  // 定义发布到哪里
+  repositories {
+    maven {
+      url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+      credentials {
+        // 这里就是之前在issues.sonatype.org注册的账号,这些敏感信息为了防止泄露,我放到了`.gradle/publish.gradle`目录下
+        username sonatypeUsername
+        password sonatypePassword
+      }
+    }
+  }
+}
+ 
+//为所有的jar包做数字签名
+signing {
+  sign publishing.publications.mavenJava
+}
+ 
+repositories {
+  mavenLocal()
+  maven { url "https://maven.aliyun.com/nexus/content/groups/public/" }  //优先使用阿里的镜像
+  mavenCentral()
+}
+
+dependencies {
+  compile "io.vertx:vertx-core:${vertx.version}"
+  compile "io.vertx:vertx-config:${vertx.version}"
+}
+
+compileJava.dependsOn(processResources)
