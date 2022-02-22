@@ -2,7 +2,7 @@
 //然后登录https://oss.sonatype.org/#stagingRepositories来查看,你的提交在未处理前，是`open`状态，然后点击`Close`按钮;然后等一会点击`Release`来发布
 
 plugins {
-  id 'java'
+  id 'java-library'
   id 'maven-publish'
   id 'signing' //使用signing plugin做数字签名
 }
@@ -140,8 +140,8 @@ repositories {
 }
 
 dependencies {
-  compile "io.vertx:vertx-core:${vertx.version}"
-  compile "io.vertx:vertx-config:${vertx.version}"
+  api "io.vertx:vertx-core:${vertx.version}"
+  api "io.vertx:vertx-config:${vertx.version}"
 }
 
 compileJava.dependsOn(processResources)
