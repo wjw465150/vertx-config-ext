@@ -1,11 +1,5 @@
 package io.vertx.config.impl.spi;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import io.vertx.config.spi.ConfigStore;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -32,33 +26,12 @@ public class ClasspathFileFileConfigStore implements ConfigStore {
 
   @Override
   public Future<Buffer> get() {
-    try(BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(getConfigStream(this.path))))) {
-      String line;
-      StringBuilder sb = new StringBuilder();
-      while ((line = reader.readLine()) != null) {
-        sb.append(line);
-      }
-      
-      Buffer buffer = Buffer.buffer(sb.toString(), "UTF-8");
-      
-      return Future.succeededFuture(buffer);
-    } catch (IOException ioex) {
-      return Future.failedFuture(ioex);
-    }
+    return vertx.fileSystem().readFile(this.path);
   }
 
   @Override
   public Future<Void> close() {
     return vertx.getOrCreateContext().succeededFuture();
   }
-  
-  private InputStream getConfigStream(String resourceLocation) {
-    ClassLoader ctxClsLoader = Thread.currentThread().getContextClassLoader();
-    InputStream is = null;
-    if (ctxClsLoader != null) {
-      is = ctxClsLoader.getResourceAsStream(resourceLocation);
-    }
-    return is;
-  }
-  
+   
 }
